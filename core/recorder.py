@@ -7,8 +7,8 @@ from ai_module.ali_nls import ALiNls
 from core import wsa_server
 from scheduler.thread_manager import MyThread
 from utils import util
-
-
+from utils import config_util as cfg
+import numpy as np
 # 启动时间 (秒)
 _ATTACK = 0.2
 
@@ -27,7 +27,7 @@ class Recorder:
         self.__processing = False
         self.__history_level = []
         self.__history_data = []
-        self.__dynamic_threshold = 0.35 # 声音识别的音量阈值
+        self.__dynamic_threshold = 0.5 # 声音识别的音量阈值
 
         self.__MAX_LEVEL = 25000
         self.__MAX_BLOCK = 100
@@ -84,15 +84,39 @@ class Recorder:
 
    
     def __record(self):
-        stream = self.get_stream() #把get stream的方式封装出来方便实现麦克风录制及网络流等不同的流录制子类
-
+        try:
+            stream = self.get_stream() #把get stream的方式封装出来方便实现麦克风录制及网络流等不同的流录制子类
+        except Exception as e:
+                print(e)
+                util.log(1, "请检查设备是否有误，再重新启动!")
+                return
         isSpeaking = False
         last_mute_time = time.time()
         last_speaking_time = time.time()
+        data = None
         while self.__running:
-            data = stream.read(1024, exception_on_overflow=False)
-            if not data:
+            try:
+                data = stream.read(1024, exception_on_overflow=False)
+            except Exception as e:
+                data = None
+                print(e)
+                util.log(1, "请检查设备是否有误，再重新启动!")
+                return
+
+            if data is None:
                 continue
+
+            if  cfg.config['source']['record']['enabled']:
+                if len(cfg.config['source']['record'])<3:
+                    channels = 1
+                else:
+                    channels = int(cfg.config['source']['record']['channels'])
+
+                #只获取第一声道
+                data = np.frombuffer(data, dtype=np.int16)
+                data = np.reshape(data, (-1, channels))  # reshaping the array to split the channels
+                mono = data[:, 0]  # taking the first channel
+                data = mono.tobytes()  
 
             level = audioop.rms(data, 2)
             if len(self.__history_data) >= 5:
@@ -135,10 +159,7 @@ class Recorder:
                         self.__waitingResult(self.__aLiNls)
             if not soon and isSpeaking:
                 self.__aLiNls.send(data)
-
-        
-        
-        
+     
 
     def set_processing(self, processing):
         self.__processing = processing
@@ -158,4 +179,3 @@ class Recorder:
     @abstractmethod
     def get_stream(self):
         pass
-

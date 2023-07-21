@@ -13,7 +13,7 @@ from openpyxl import load_workbook
 import numpy as np
 # import tensorflow as tf
 import fay_booter
-from ai_module import xf_aiui
+
 from ai_module import xf_ltp
 from ai_module.ms_tts_sdk import Speech
 from core import wsa_server, tts_voice, song_player
@@ -21,10 +21,48 @@ from core.interact import Interact
 from core.tts_voice import EnumVoice
 from scheduler.thread_manager import MyThread
 from utils import util, storer, config_util
-from ai_module import yuan_1_0
-from ai_module import chatgpt
 import pygame
 from utils import config_util as cfg
+from core import qa_service
+
+#nlp
+from ai_module import nlp_xfaiui
+from ai_module import nlp_yuan
+from ai_module import nlp_gpt
+from ai_module import nlp_lingju
+
+modules = {
+    "nlp_xfaiui":nlp_xfaiui,
+    "nlp_yuan": nlp_yuan, 
+    "nlp_gpt": nlp_gpt,
+    "nlp_lingju": nlp_lingju
+}
+
+
+def determine_nlp_strategy(msg):
+    text = ''
+    try:
+        util.log(1, '自然语言处理...')
+        tm = time.time()
+        cfg.load_config()
+       
+        module_name = "nlp_" + cfg.key_chat_module
+        selected_module = modules.get(module_name)
+        if selected_module is None:
+            raise RuntimeError('灵聚key、yuan key、gpt key都没有配置！')   
+       
+        text = selected_module.question(msg)  
+        util.log(1, '自然语言处理完成. 耗时: {} ms'.format(math.floor((time.time() - tm) * 1000)))
+        if text == '哎呀，你这么说我也不懂，详细点呗' or text == '':
+            util.log(1, '[!] 自然语言无语了！')
+            text = '哎呀，你这么说我也不懂，详细点呗'  
+    except BaseException as e:
+        print(e)
+        util.log(1, '自然语言处理错误！')
+        text = '哎呀，你这么说我也不懂，详细点呗'   
+
+    return text
+    
 
 
 class FeiFei:
@@ -45,37 +83,6 @@ class FeiFei:
         # self.W = np.array([0.01577594,1.16119452,0.75828,0.207746,1.25017864,0.1044121,0.4294899,0.2770932]).reshape(-1,1) #适应模型变量矩阵
         self.W = np.array([0.0, 0.6, 0.1, 0.7, 0.3, 0.0, 0.0, 0.0]).reshape(-1, 1)  # 适应模型变量矩阵
 
-        self.command_keyword = [
-            [['播放歌曲', '播放音乐', '唱首歌', '放首歌', '听音乐', '你会唱歌吗', '我想首听歌'], 'playSong'],
-            [['关闭', '再见', '你走吧'], 'stop'],
-            [['静音', '闭嘴', '我想静静'], 'mute'],
-            [['取消静音', '你在哪呢', '你可以说话了'], 'unmute'],
-            [['换个性别', '换个声音'], 'changeVoice']
-        ]
-
-        # 人设提问关键字
-        self.attribute_keyword = [
-            [['你叫什么名字', '你的名字是什么'], 'name'],
-            [['你是男的还是女的', '你是男生还是女生', '你的性别是什么', '你是男生吗', '你是女生吗', '你是男的吗', '你是女的吗', '你是男孩子吗', '你是女孩子吗', ], 'gender', ],
-            [['你今年多大了', '你多大了', '你今年多少岁', '你几岁了', '你今年几岁了', '你今年几岁了', '你什么时候出生', '你的生日是什么', '你的年龄'], 'age', ],
-            [['你的家乡在哪', '你的家乡是什么', '你家在哪', '你住在哪', '你出生在哪', '你的出生地在哪', '你的出生地是什么', ], 'birth', ],
-            [['你的生肖是什么', '你属什么', ], 'zodiac', ],
-            [['你是什么座', '你是什么星座', '你的星座是什么', ], 'constellation', ],
-            [['你是做什么的', '你的职业是什么', '你是干什么的', '你的职位是什么', '你的工作是什么', '你是做什么工作的'], 'job', ],
-            [['你的爱好是什么', '你有爱好吗', '你喜欢什么', '你喜欢做什么'], 'hobby'],
-            [['联系方式', '联系你们', '怎么联系客服', '有没有客服'], 'contact']
-        ]
-
-        # 商品提问关键字
-        self.explain_keyword = [
-            [['是什么'], 'intro'],
-            [['怎么用', '使用场景', '有什么作用'], 'usage'],
-            [['怎么卖', '多少钱', '售价'], 'price'],
-            [['便宜点', '优惠', '折扣', '促销'], 'discount'],
-            [['质量', '保证', '担保'], 'promise'],
-            [['特点', '优点'], 'character'],
-        ]
-
         self.wsParam = None
         self.wss = None
         self.sp = Speech()
@@ -90,53 +97,13 @@ class FeiFei:
         self.playing = False
         self.muting = False
 
-    def __string_similar(self, s1, s2):
-        return difflib.SequenceMatcher(None, s1, s2).quick_ratio()
-
-    def __read_qna(self, filename) -> list:
-        qna = []
-        try:
-            wb = load_workbook(filename)
-            sheets = wb.worksheets  # 获取当前所有的sheet
-            sheet = sheets[0]
-            for row in sheet.rows:
-                if len(row) >= 2:
-                    qna.append([row[0].value.split(";"), row[1].value])
-        except BaseException as e:
-            print("无法读取Q&A文件 {} -> ".format(filename) + str(e))
-        return qna
-
-    def __get_keyword(self, keyword_dict, text):
-        last_similar = 0
-        last_answer = ''
-        for qa in keyword_dict:
-            for quest in qa[0]:
-                similar = self.__string_similar(text, quest)
-                if quest in text:
-                    similar += 0.3
-                if similar > last_similar:
-                    last_similar = similar
-                    last_answer = qa[1]
-        if last_similar >= 0.6:
-            return last_answer
-        return None
-
-    def __play_song(self):
-        self.playing = True
-        song_player.play()
-        self.playing = False
-        wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
-
     def __get_answer(self, interleaver, text):
 
         if interleaver == "mic":
             # 命令
-            keyword = self.__get_keyword(self.command_keyword, text)
+            keyword = qa_service.question('command',text)
             if keyword is not None:
-                if keyword == "playSong":
-                    MyThread(target=self.__play_song).start()
-                    wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
-                elif keyword == "stop":
+                if keyword == "stop":
                     fay_booter.stop()
                     wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
                     wsa_server.get_web_instance().add_cmd({"liveState": 0})
@@ -161,59 +128,21 @@ class FeiFei:
                 return "NO_ANSWER"
 
         # 人设问答
-        keyword = self.__get_keyword(self.attribute_keyword, text)
+        keyword = qa_service.question('Persona',text)
         if keyword is not None:
             return config_util.config["attribute"][keyword]
-
+        
+        answer = None
         # 全局问答
-        answer = self.__get_keyword(self.__read_qna(config_util.config['interact']['QnA']), text)
+        answer = qa_service.question('qa',text)
+        if answer is not None:
+            return answer
+        
+        answer = qa_service.question('goods',text)
         if answer is not None:
             return answer
 
-        items = self.__get_item_list()
 
-        if len(items) > 0:
-            item = items[self.item_index]
-
-            # 跨商品物品问答匹配
-            for ite in items:
-                name = ite["name"]
-                if name != item["name"]:
-                    if name in text or self.__string_similar(text, name) > 0.6:
-                        item = ite
-                        break
-
-            # 商品介绍问答
-            keyword = self.__get_keyword(self.explain_keyword, text)
-            if keyword is not None:
-                try:
-                    return item["explain"][keyword]
-                except BaseException as e:
-                    print(e)
-
-            # 商品问答
-            answer = self.__get_keyword(self.__read_qna(item["QnA"]), text)
-            if answer is not None:
-                return answer
-
-            return None
-
-    def __get_list_answer(self, answers, text):
-        last_similar = 0
-        last_answer = ''
-        for mlist in answers:
-            for quest in mlist[0]:
-                similar = self.__string_similar(text, quest)
-                if quest in text:
-                    similar += 0.3
-                if similar > last_similar:
-                    last_similar = similar
-                    answer_list = mlist[1]
-                    last_answer = answer_list[random.randint(0, len(answer_list) - 1)]
-        # print("相似度: {}, 回答: {}".format(last_similar, last_answer))
-        if last_similar >= 0.6:
-            return last_answer
-        return None
 
     def __auto_speak(self):
         i = 0
@@ -241,29 +170,8 @@ class FeiFei:
                             continue
                         text = ''
                         if answer is None:
-                            try:
-                                wsa_server.get_web_instance().add_cmd({"panelMsg": "思考中..."})
-                                util.log(1, '自然语言处理...')
-                                tm = time.time()
-                                cfg.load_config()
-                                if cfg.key_chat_module == 'xfaiui':
-                                    text = xf_aiui.question(self.q_msg)
-                                elif cfg.key_chat_module == 'yuan':
-                                    text = yuan_1_0.question(self.q_msg)
-                                elif cfg.key_chat_module == 'chatgpt':
-                                    text = chatgpt.question(self.q_msg)
-                                else:
-                                    raise RuntimeError('讯飞key、yuan key、chatgpt key都没有配置！')    
-                                util.log(1, '自然语言处理完成. 耗时: {} ms'.format(math.floor((time.time() - tm) * 1000)))
-                                if text == '哎呀，你这么说我也不懂，详细点呗' or text == '':
-                                    util.log(1, '[!] 自然语言无语了！')
-                                    wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
-                                    continue
-                            except BaseException as e:
-                                print(e)
-                                util.log(1, '自然语言处理错误！')
-                                wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
-                                continue
+                            wsa_server.get_web_instance().add_cmd({"panelMsg": "思考中..."})
+                            text = determine_nlp_strategy(self.q_msg)
                         elif answer != 'NO_ANSWER':
                             text = answer
 
@@ -324,12 +232,6 @@ class FeiFei:
             except BaseException as e:
                 print(e)
 
-    def __get_item_list(self) -> list:
-        items = []
-        for item in config_util.config["items"]:
-            if item["enabled"]:
-                items.append(item)
-        return items
 
     def __get_explain_from_index(self, index: int):
         if index == 0:
@@ -396,7 +298,7 @@ class FeiFei:
                 return interact
         return None
 
-    # 适应模型计算
+    # 适应模型计算(用于学习真人的性格特质，开源版本暂不使用)
     def __fay(self, index):
         if 0 < index < 8:
             self.X[0][index] += 1
@@ -556,22 +458,6 @@ class FeiFei:
                     time.sleep(1)
         except Exception as err:
             pass
-
-    def __waiting_speaking(self, file_url):
-        try:
-            time.sleep(5)
-            print('[' + str(int(time.time())) + '][菲菲] [S] [开始发言]')
-            with wave.open(file_url, 'rb') as wav_file:
-                wav_length = wav_file.getnframes() / float(wav_file.getframerate())
-            time.sleep(wav_length)
-            self.last_interact_time = time.time()
-            self.speaking = False
-            print('[' + str(int(time.time())) + '][菲菲] [E] [结束发言]')
-            time.sleep(30)
-            os.remove(file_url)
-        except:
-            self.last_interact_time = time.time()
-            self.speaking = False
 
     # 冷场情绪更新
     def __update_mood_runnable(self):

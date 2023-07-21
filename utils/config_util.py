@@ -39,6 +39,8 @@ def load_config():
     global key_yuan_1_0_phone
     global key_chatgpt_api_key
     global key_chat_module
+    global key_lingju_api_key
+    global key_lingju_api_authcode
 
     system_config = ConfigParser()
     system_config.read('system.conf', encoding='UTF-8')
@@ -56,6 +58,8 @@ def load_config():
     key_yuan_1_0_phone = system_config.get('key', 'yuan_1_0_phone')
     key_chatgpt_api_key = system_config.get('key', 'chatgpt_api_key')
     key_chat_module = system_config.get('key', 'chat_module')
+    key_lingju_api_key = system_config.get('key', 'lingju_api_key')
+    key_lingju_api_authcode = system_config.get('key', 'lingju_api_authcode')
 
     config = json.load(codecs.open('config.json', encoding='utf-8'))
 

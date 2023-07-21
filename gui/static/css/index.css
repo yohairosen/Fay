@@ -1,6 +1,5 @@
 #app {
     width: 1920px;
-    height: 1080px;
     margin: 0;
     padding: 0;
 }
@@ -11,7 +10,6 @@ ul {
 
 .main {
     width: 1920px;
-    height: 1080px;
     display: flex;
     flex-direction: column;
     /* flex-wrap: wrap; */
@@ -202,6 +200,7 @@ ul {
 .right_main {
     width: 915px;
     border: 1px solid #333333;
+    padding-bottom: 40px;
 }
 
 .right_main ul {

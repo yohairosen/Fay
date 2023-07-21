@@ -54,7 +54,6 @@ class RecorderListener(Recorder):
         self.__device = device
         self.__RATE = 16000
         self.__FORMAT = pyaudio.paInt16
-        self.__CHANNELS = 1
 
         super().__init__(fei)
 
@@ -67,25 +66,37 @@ class RecorderListener(Recorder):
 
     def get_stream(self):
         self.paudio = pyaudio.PyAudio()
-        device_id = self.__findInternalRecordingDevice(self.paudio)
+        device_id,devInfo = self.__findInternalRecordingDevice(self.paudio)
         if device_id < 0:
             return
-        self.stream = self.paudio.open(input_device_index=device_id, rate=self.__RATE, format=self.__FORMAT, channels=self.__CHANNELS, input=True)
+        channels = int(devInfo['maxInputChannels'])
+        if channels == 0:
+            util.log(1, '请检查设备是否有误，再重新启动!')
+            return
+        self.stream = self.paudio.open(input_device_index=device_id, rate=self.__RATE, format=self.__FORMAT, channels=channels, input=True)
         return self.stream
 
     def __findInternalRecordingDevice(self, p):
         for i in range(p.get_device_count()):
             devInfo = p.get_device_info_by_index(i)
             if devInfo['name'].find(self.__device) >= 0 and devInfo['hostApi'] == 0:
-                return i
+                config_util.config['source']['record']['channels'] = devInfo['maxInputChannels']
+                config_util.save_config(config_util.config)
+                return i, devInfo
         util.log(1, '[!] 无法找到内录设备!')
-        return -1
+        return -1, None
     
     def stop(self):
         super().stop()
-        self.stream.stop_stream()
-        self.stream.close()
-        self.paudio.terminate()
+        try:
+            self.stream.stop_stream()
+            self.stream.close()
+            self.paudio.terminate()
+        except Exception as e:
+                print(e)
+                util.log(1, "请检查设备是否有误，再重新启动!")
+                    
+        
 
 
 #Edit by xszyou on 20230113:录制远程设备音频输入并传给aliyun
@@ -119,6 +130,8 @@ class DeviceInputListener(Recorder):
             time.sleep(1)
 
     def on_speaking(self, text):
+        global feiFei
+
         if len(text) > 1:
             interact = Interact("mic", 1, {'user': '', 'msg': text})
             util.printInfo(3, "语音", '{}'.format(interact.data["msg"]), time.time())
@@ -146,6 +159,7 @@ class DeviceInputListener(Recorder):
 
 
 def console_listener():
+    global feiFei
     type_names = {
         1: '发言',
         2: '进入',
@@ -231,11 +245,9 @@ def start():
 
     util.log(1, '开启服务...')
     __running = True
+
     util.log(1, '读取配置...')
     config_util.load_config()
-
-
-    
 
     util.log(1, '开启核心服务...')
     feiFei = FeiFei()

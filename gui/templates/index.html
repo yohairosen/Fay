@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
     <script src="/static/live2d/autoload.js"></script>
 
-    <title>自动商品介绍控制器</title>
+    <title>Fay</title>
 
 </head>
 
@@ -23,7 +23,7 @@
 <div id="app">
     <div class="main">
         <div class="title">
-            <h2>Fay控制器2.0</h2>
+            <h2>Fay数字人带货版</h2>
         </div>
         <div class="main_box">
             <div class="left">
@@ -75,6 +75,11 @@
                             </div>
                             <div class="character_right">
                                 <ul>
+                                    <li style="width: 375px;">
+                                        <p>Q&A文件：</p>
+                                        <el-input v-model="interact_QnA" placeholder="请输入内容"></el-input>
+                                    </li>
+                                    <br>
                                     <li>
                                         <p>送礼敏感度：</p>
 
@@ -103,6 +108,7 @@
                                         <span style="    padding-left: 10px;
                                                 line-height: 40px;">秒</span>
                                     </li>
+                                    <br>
                                     <li>
                                         <p>声音选择：{{attribute_voice}}</p>
                                         <el-select v-model="attribute_voice" placeholder="请选择">
@@ -119,14 +125,7 @@
                                 </ul>
                             </div>
                         </div>
-                        <div class="character_box">
-                            <p>Q&A文件：</p>
-                            <el-input v-model="interact_QnA" placeholder="请输入内容"></el-input>
-                            <!--                            <el-upload class="upload-demo" action="http://127.0.0.1:5000/"-->
-                            <!--                                       :on-success="handlePreview">-->
-                            <!--                                <el-input v-model="interact_QnA" placeholder="请输入内容"></el-input>-->
-                            <!--                            </el-upload>-->
-                        </div>
+                     
                     </div>
                 </div>
                 <div class="left_box">
