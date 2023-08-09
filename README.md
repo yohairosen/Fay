@@ -8,17 +8,40 @@
 
 Fay是一个完整的开源项目，包含Fay控制器及数字人模型，可灵活组合出不同的应用场景：虚拟主播、现场推销货、商品导购、语音助理、远程语音助理、数字人互动、数字人面试官及心理测评、贾维斯、Her。开发人员可以利用该项目简单地构建各种类型的数字人或数字助理。该项目各模块之间耦合度非常低，包括声音来源、语音识别、情绪分析、NLP处理、情绪语音合成、语音输出和表情动作输出等模块。每个模块都可以轻松地更换。
 
-## **推荐集成的开源仓库**
+## **应用逻辑**
 
-消费级pc大模型：https://github.com/THUDM/ChatGLM-6B 
+  Remote Android　　　　　　Local PC　　　　　Remote PC
 
-全平台抖音抓包：https://github.com/wwengg/douyin
+　　　　　└─────────────┼─────────────┘
+                
+                
+　　　　　　Aliyun API ─┐　　　│
+      
+            
+　　　　　 　　　　　　├── ASR　　　
+            
+            
+ 　  　　 　　　 [FunASR](https://www.bilibili.com/video/BV1qs4y1g74e) ─┘  　　  │　　 　 ┌─ Yuan 1.0
+                
+　　　　　　　　　　　　　　　│　　 　 ├─ [LingJu](https://www.bilibili.com/video/BV1NW4y1D76a/)
+                
+　　　 　　　　　　　　　　　NLP ────┼─ [GPT/ChatGPT](https://www.bilibili.com/video/BV1Dg4y1V7pn)
+                
+　　　　　　　　　　　　　　　│　　 　 ├─ [Rasa+ChatGLM-6B](https://www.bilibili.com/video/BV1D14y1f7pr)
+         
+　　　　　　　　 Azure ─┐　 　 │　　 　 ├─ [VisualGLM](https://www.bilibili.com/video/BV1mP411Q7mj)
+            
+　　　　　 　 Edge TTS ─┼──     TTS 　  　 └─ [RWKV](https://www.bilibili.com/video/BV1yu41157zB)
+       
+　 　　 　   　　[开源 TTS](https://www.bilibili.com/read/cv25192534) ─┘　  　│　　 　 
+            
+　　　　　　　　　　　　　　　│　　 　 
+         
+　　　　　　　　　　　　　　　│　　 　 
+                
+　　　  ┌──────────┬────┼───────┬─────────┐
 
-UE5工程：https://github.com/xszyou/fay-ue5
-
-实时照片驱动集成：https://github.com/waityousea/xuniren
-
-
+Remote Android　　[Live2D](https://www.bilibili.com/video/BV1sx4y1d775/?vd_source=564eede213b9ddfa9a10f12e5350fd64)　　 [UE](https://www.bilibili.com/read/cv25133736)　　　 [xuniren](https://www.bilibili.com/read/cv24997550)　　　Remote PC
 
 ## **一、Fay控制器用途**
 
@@ -128,6 +151,14 @@ UE5工程：https://github.com/xszyou/fay-ue5
 
 
 ## **三、升级日志**
+
+**2023.08.09：**
+
++ 商品带货脚本补充唇形计算；
++ 去除mp3格式警告信息；
++ websocket逻辑优化；
++ 去除灵聚接口警告信息；
++ 数字人端接口通讯优化。
 
 **2023.07.21：**
 

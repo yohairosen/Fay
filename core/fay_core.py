@@ -8,6 +8,7 @@ import socket
 
 import eyed3
 from openpyxl import load_workbook
+import logging
 
 # 适应模型使用
 import numpy as np
@@ -31,12 +32,20 @@ from ai_module import nlp_yuan
 from ai_module import nlp_gpt
 from ai_module import nlp_lingju
 
+import platform
+if platform.system() == "Windows":
+    import sys
+    sys.path.append("test/ovr_lipsync")
+    from test_olipsync import LipSyncGenerator
+
 modules = {
     "nlp_xfaiui":nlp_xfaiui,
     "nlp_yuan": nlp_yuan, 
     "nlp_gpt": nlp_gpt,
     "nlp_lingju": nlp_lingju
 }
+
+
 
 
 def determine_nlp_strategy(msg):
@@ -398,14 +407,28 @@ class FeiFei:
 
     def __send_audio(self, file_url, say_type):
         try:
-            audio_length = eyed3.load(file_url).info.time_secs #mp3音频长度
+            try:
+                logging.getLogger('eyed3').setLevel(logging.ERROR)
+                audio_length = eyed3.load(file_url).info.time_secs #mp3音频长度
+            except Exception as e:
+                audio_length = 3
             # with wave.open(file_url, 'rb') as wav_file: #wav音频长度
             #     audio_length = wav_file.getnframes() / float(wav_file.getframerate())
             if audio_length <= config_util.config["interact"]["maxInteractTime"] or say_type == "script":
                 if config_util.config["interact"]["playSound"]: # 展板播放
                     self.__play_sound(file_url)
                 else:#发送音频给ue和socket
-                    content = {'Topic': 'Unreal', 'Data': {'Key': 'audio', 'Value': os.path.abspath(file_url), 'Time': audio_length, 'Type': say_type}}
+                     #推送ue
+                    content = {'Topic': 'Unreal', 'Data': {'Key': 'audio', 'Value': os.path.abspath(file_url), 'Text': self.a_msg, 'Time': audio_length, 'Type': say_type}}
+                    #计算lips
+                    if platform.system() == "Windows":
+                        try:
+                            lip_sync_generator = LipSyncGenerator()
+                            viseme_list = lip_sync_generator.generate_visemes(os.path.abspath(file_url))
+                            consolidated_visemes = lip_sync_generator.consolidate_visemes(viseme_list)
+                            content["Data"]["Lips"] = consolidated_visemes
+                        except e:
+                            util.log(1, "唇型数字生成失败，无法使用新版ue5工程")     
                     wsa_server.get_instance().add_cmd(content)
                     if self.deviceConnect is not None:
                         try:
