@@ -36,10 +36,23 @@ class WS_Client:
                     interact_datas.pop()
                 interact = Interact("live", 1, {"user": json.loads(data["Data"])["User"]["Nickname"], "msg": json.loads(data["Data"])["Content"]})
                 interact_datas.append(interact)
-            if data["Type"] == 3:#进入
+            elif data["Type"] == 2:#点赞
+                if len(interact_datas) >= 5:
+                    interact_datas.pop()
+                interact_datas.append(Interact("live", 6, {"user": json.loads(data["Data"])["User"]["Nickname"], "msg": "点赞"}))
+            elif data["Type"] == 3:#进入
                 if len(interact_datas) >= 5:
                     interact_datas.pop()
                 interact_datas.append(Interact("live", 2, {"user": json.loads(data["Data"])["User"]["Nickname"], "msg": "来了"}))
+            elif data["Type"] == 4:#关注
+                if len(interact_datas) >= 5:
+                    interact_datas.pop()
+                interact_datas.append(Interact("live", 4, {"user": json.loads(data["Data"])["User"]["Nickname"], "msg": "关注"}))
+            elif data["Type"] == 5:#礼物
+                if len(interact_datas) >= 5:
+                    interact_datas.pop()
+                interact_datas.append(Interact("live", 3, {"user": json.loads(data["Data"])["User"]["Nickname"], "msg": "礼物", "gift": json.loads(data["Data"])["GiftName"], "amount": json.loads(data["Data"])["GiftCount"]}))
+       
             #...
         except Exception as e:
             pass

@@ -80,6 +80,8 @@ class FeiFei:
         self.q_msg = '你叫什么名字？'
         self.a_msg = 'hi,我叫菲菲，英文名是fay'
         self.mood = 0.0  # 情绪值
+        self.old_mood = 0.0
+        self.connect = False
         self.item_index = 0
         self.deviceSocket = None
         self.deviceConnect = None
@@ -174,12 +176,18 @@ class FeiFei:
                     # self.__isExecute = True #!!!!
 
                     if index == 1:
+                        if not config_util.config["interact"]["playSound"]: # 非展板播放
+                            content = {'Topic': 'Unreal', 'Data': {'Key': 'question', 'Value': self.q_msg}}
+                            wsa_server.get_instance().add_cmd(content)
                         answer = self.__get_answer(interact.interleaver, self.q_msg)
                         if self.muting:
                             continue
                         text = ''
                         if answer is None:
                             wsa_server.get_web_instance().add_cmd({"panelMsg": "思考中..."})
+                            if not cfg.config["interact"]["playSound"]: # 非展板播放
+                                content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': "思考中..."}}
+                                wsa_server.get_instance().add_cmd(content)
                             text = determine_nlp_strategy(self.q_msg)
                         elif answer != 'NO_ANSWER':
                             text = answer
@@ -190,24 +198,45 @@ class FeiFei:
                             self.a_msg = user_name + '，' + text
 
                     elif index == 2:
-                        self.a_msg = ['我们的直播间越来越多人咯', '感谢{}的到来'.format(user_name), '欢印{}来到我们的直播间'.format(user_name)][
+                        self.a_msg = ['新来的宝贝记得点点关注噢！么么哒！', '我的宝贝{}欢迎你来到直播间，欢迎欢迎'.format(user_name), '欢迎{}宝贝来到我们的直播间，记得点点关注，给主播加加油噢！'.format(user_name)][
                             random.randint(0, 2)]
-
+                        
                     elif index == 3:
                         gift = interact.data["gift"]
-                        self.a_msg = '感谢感谢，感谢 {}送给我的{}个{}'.format(interact.data["user"], interact.data["amount"], gift[1])
+                        self.a_msg = '感谢感谢，感谢 {}送给我的{}个{}'.format(interact.data["user"], interact.data["amount"], gift)
+                        self.a_msg = ['太感谢宝宝 {}送我的{}！祝宝宝财运追着跑！运气乐逍遥！'.format(interact.data["user"],  gift), 
+                                      '太感谢我的小可爱 {}送我的{}！宝贝你真牛！真大气！'.format(interact.data["user"],  gift), 
+                                      '哇！太感谢宝宝{}送我的{}！不服天！不服地！就服宝宝的实力！'.format(interact.data["user"],  gift),
+                                      '太感谢{}老板送我的{}！老板破费了！老板大气！'.format(interact.data["user"],  gift),
+                                      '太感谢我的好朋友{}送我的{}！祝您福气满满！微笑甜甜！'.format(interact.data["user"],  gift),
+                                      '哇！太感谢{}送我的{}！太感谢了！我的好朋友！祝您才华四溢！'.format(interact.data["user"],  gift),
+                                      '感谢{}送我的{}！太感谢了！我的好朋友！主播好开心！么么哒！'.format(interact.data["user"],  gift),
+                                      '哇！太感谢我的小可爱{}送我的{}！祝您元气满满！开心快乐！'.format(interact.data["user"],  gift),
+                                      '一口气感谢了那么多礼物！真的太开心了！谢谢宝宝们的礼物！',
+                                      ][random.randint(0, 8)]
 
                     elif index == 4:
-                        self.a_msg = '感谢关注'
+                        self.a_msg = ['太感谢我的{}小可爱的关注！主播好开心！么么哒！'.format(user_name), '我的天啊！太感谢{}宝贝的关注！宝贝宝贝6！6！6！主播给你一路护航！'.format(user_name), '太开心了！谢谢{}宝宝的关注！祝宝宝天天开心！'.format(user_name)][
+                            random.randint(0, 2)]
+                       
 
                     elif index == 5:
-                        msg = ""
-                        for i in range(0, len(interact.data["gifts"])):
-                            user = interact.data["gifts"][i]["user"]
-                            gift = interact.data["gifts"][i]["gift"]
-                            amount = interact.data["gifts"][i]["amount"]
-                            msg += "{}送给我的{}个{}".format(user, amount, gift[1])
-                        self.a_msg = '感谢感谢，感谢' + msg
+                        self.a_msg = ['收到那么多礼物！主播真的太开心了！谢谢宝宝们的礼物！不服天！不服地！就服宝宝们的实力',
+                                       '哇！收到这么多礼物！主播好开心！谢谢宝宝们！'][
+                        random.randint(0, 2)]
+
+                    elif index == 6:
+                        self.a_msg = ['感谢宝贝们的赞赞，比心比心', '谢谢我的宝宝{}的连续点赞了，谢谢你！'.format(user_name), '太感谢宝宝{}的赞赞啦！'.format(user_name)][
+                            random.randint(0, 2)]
+                    elif index == 7:
+                        self.a_msg = ['看见下面的小心心了吗？点一点！谁点得多！就是主播最好的朋友!', 
+                                      '咦?怎么没人点小心心?点点支持一下主播!主播十分需要你这个朋友!',
+                                      '点个小心心！主播给你画个心喔！',
+                                      '主播这么勤快！还不点点关注？',
+                                      '宝宝们！快来点点小心心！谁能点够100下就是主播最好最好的朋友了！',
+                                      '各位宝宝们！点下面小心心，给主播加加油吧！',
+                                      '观众姥爷们!快关注起来！助力主播进步一点点！'][
+                            random.randint(0, 6)]
                     self.last_speak_data = self.a_msg
                     self.speaking = True
                     MyThread(target=self.__say, args=['interact']).start()
@@ -242,6 +271,7 @@ class FeiFei:
                 print(e)
 
 
+
     def __get_explain_from_index(self, index: int):
         if index == 0:
             return "character"
@@ -259,22 +289,26 @@ class FeiFei:
 
     def on_interact(self, interact: Interact):
 
+        if interact.interact_type == 1:
+            self.interactive.append(interact)
+
         # 合并同类交互
         # 进入
-        if interact.interact_type == 2:
+        elif interact.interact_type == 2:
             itr = self.__get_interactive(2)
             if itr is None:
                 self.interactive.append(interact)
             else:
-                newItr = (2, itr.data["user"] + ', ' + interact.data["user"], itr.data["msg"])
+                newItr = itr.data["user"] + ', ' + interact.data["user"]
                 self.interactive.remove(itr)
-                self.interactive.append(newItr)
+                self.interactive.append(Interact("live", 2,  {"user": newItr}))
 
         # 送礼
         elif interact.interact_type == 3:
             gifts = []
             rm_list = []
             for itr in self.interactive:
+                
                 if itr.interact_type == 3:
                     gifts.append({
                         "user": itr.data["user"],
@@ -286,14 +320,16 @@ class FeiFei:
                     for gift in itr.data["gifts"]:
                         gifts.append(gift)
                     rm_list.append(itr)
-            if len(rm_list) > 0:
+           
+            if len(rm_list) > 1:
                 for itr in rm_list:
                     self.interactive.remove(itr)
-                self.interactive.append(Interact("live", 5, {"gifts": gifts}))
-
+                self.interactive.append(Interact("live", 5,  {"user":'多人',"gifts": gifts}))
+            else:
+                self.interactive.append(interact)
         # 关注
         elif interact.interact_type == 4:
-            if self.__get_interactive(2) is None:
+            if self.__get_interactive(4) is None:
                 self.interactive.append(interact)
 
         else:
@@ -322,9 +358,17 @@ class FeiFei:
     def __send_mood(self):
         while self.__running:
             time.sleep(3)
-            if not self.sleep and not config_util.config["interact"]["playSound"]:
+            if not self.sleep and not config_util.config["interact"]["playSound"] and wsa_server.get_instance().isConnect:
                 content = {'Topic': 'Unreal', 'Data': {'Key': 'mood', 'Value': self.mood}}
-                wsa_server.get_instance().add_cmd(content)
+                if not self.connect:
+                    wsa_server.get_instance().add_cmd(content)
+                    self.connect = True
+                else:
+                    if  self.old_mood != self.mood:
+                        wsa_server.get_instance().add_cmd(content)
+                        self.old_mood = self.mood
+            else:
+                self.connect = False
 
     # 更新情绪
     def __update_mood(self, typeIndex):
@@ -446,14 +490,16 @@ class FeiFei:
                         except socket.error as serr:
                             util.log(1,"远程音频输入输出设备已经断开：{}".format(serr))
 
-
+                if audio_length<30:
+                    self.speaking = False
                     
                 wsa_server.get_web_instance().add_cmd({"panelMsg": self.a_msg})
                 time.sleep(audio_length + 0.5)
                 wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
                 if config_util.config["interact"]["playSound"]:
                     util.log(1, '结束播放！')
-            self.speaking = False
+            if audio_length>30:
+                self.speaking = False
         except Exception as e:
             print(e)
 
@@ -502,10 +548,16 @@ class FeiFei:
     def set_sleep(self, sleep):
         self.sleep = sleep
 
+    def __add_invite(self):
+        while(1):
+            time.sleep(50)
+            self.interactive.append(Interact("live", 7,{"user":'主播'}))
+
     def start(self):
         MyThread(target=self.__send_mood).start()
         MyThread(target=self.__auto_speak).start()
         MyThread(target=self.__update_mood_runnable).start()
+        MyThread(target=self.__add_invite).start()
 
     def stop(self):
         self.__running = False

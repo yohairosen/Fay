@@ -25,7 +25,8 @@ def storage_live_interact(interact: Interact):
         1: '发言',
         2: '进入',
         3: '送礼',
-        4: '关注'
+        4: '关注',
+        6: '点赞'
     }
     timestamp = int(time.time() * 1000)
     Thread(target=__write_to_file, args=["%s,%s,%s,%s\n" % (timestamp, msg_type[interact_type], user, msg)]).start()

@@ -152,6 +152,10 @@ Remote Android　　[Live2D](https://www.bilibili.com/video/BV1sx4y1d775/?vd_sou
 
 ## **三、升级日志**
 
+**2023.08.18：**
+
++ 开源完整交互逻辑。
+
 **2023.08.09：**
 
 + 商品带货脚本补充唇形计算；

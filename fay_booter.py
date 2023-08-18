@@ -34,9 +34,10 @@ class ViewerListener(Viewer):
             1: '发言',
             2: '进入',
             3: '送礼',
-            4: '关注'
+            4: '关注',
+            6: '点赞'
         }
-        util.printInfo(1, type_names[interact.interact_type], '{}: {}'.format(interact.data["user"], interact.data["msg"]), event_time)
+        # util.printInfo(1, type_names[interact.interact_type], '{}: {}'.format(interact.data["user"], interact.data["msg"]), event_time)
         if interact.interact_type == 1:
             feiFei.last_quest_time = time.time()
         thr = MyThread(target=feiFei.on_interact, args=[interact])

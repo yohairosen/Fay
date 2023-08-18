@@ -70,6 +70,7 @@ new Vue({
                 name: '2',
                 content: 'Tab 2 content'
             }],
+            is_connect: false
 
         }
     },
@@ -194,6 +195,18 @@ new Vue({
                         }, 7000);
                     }
 
+                }
+
+                let is_connect = data.is_connect
+                if(is_connect != undefined){
+                    _this.is_connect = is_connect
+                    if (is_connect){
+                        _this.play_sound_enabled = false
+                        _this.postData()
+                    }else{
+                        _this.play_sound_enabled = true
+                        _this.postData()
+                    }
                 }
             }
         },
