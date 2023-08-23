@@ -31,6 +31,7 @@ from ai_module import nlp_xfaiui
 from ai_module import nlp_yuan
 from ai_module import nlp_gpt
 from ai_module import nlp_lingju
+from ai_module import nlp_ChatGLM2
 
 import platform
 if platform.system() == "Windows":
@@ -42,13 +43,15 @@ modules = {
     "nlp_xfaiui":nlp_xfaiui,
     "nlp_yuan": nlp_yuan, 
     "nlp_gpt": nlp_gpt,
-    "nlp_lingju": nlp_lingju
+    "nlp_lingju": nlp_lingju,
+    "nlp_chatglm2": nlp_ChatGLM2
+
 }
 
 
 
 
-def determine_nlp_strategy(msg):
+def determine_nlp_strategy(msg,history):
     text = ''
     try:
         util.log(1, '自然语言处理...')
@@ -59,8 +62,10 @@ def determine_nlp_strategy(msg):
         selected_module = modules.get(module_name)
         if selected_module is None:
             raise RuntimeError('灵聚key、yuan key、gpt key都没有配置！')   
-       
-        text = selected_module.question(msg)  
+        if(cfg.key_chat_module == "chatglm2"):
+            text = selected_module.question(msg,history)  
+        else:
+            text = selected_module.question(msg)  
         util.log(1, '自然语言处理完成. 耗时: {} ms'.format(math.floor((time.time() - tm) * 1000)))
         if text == '哎呀，你这么说我也不懂，详细点呗' or text == '':
             util.log(1, '[!] 自然语言无语了！')
@@ -107,6 +112,8 @@ class FeiFei:
         self.last_quest_time = time.time()
         self.playing = False
         self.muting = False
+        self.set_img = ""
+        self.chat_list = {}
 
     def __get_answer(self, interleaver, text):
 
@@ -117,6 +124,8 @@ class FeiFei:
                 if keyword == "stop":
                     fay_booter.stop()
                     wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
+                    content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
+                    wsa_server.get_instance().add_cmd(content)
                     wsa_server.get_web_instance().add_cmd({"liveState": 0})
                 elif keyword == "mute":
                     self.muting = True
@@ -125,6 +134,8 @@ class FeiFei:
                     MyThread(target=self.__say, args=['interact']).start()
                     time.sleep(0.5)
                     wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
+                    content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
+                    wsa_server.get_instance().add_cmd(content)
                 elif keyword == "unmute":
                     self.muting = False
                     return None
@@ -136,6 +147,8 @@ class FeiFei:
                             break
                     config_util.save_config(config_util.config)
                     wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
+                    content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
+                    wsa_server.get_instance().add_cmd(content)
                 return "NO_ANSWER"
 
         # 人设问答
@@ -188,17 +201,28 @@ class FeiFei:
                             if not cfg.config["interact"]["playSound"]: # 非展板播放
                                 content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': "思考中..."}}
                                 wsa_server.get_instance().add_cmd(content)
-                            text = determine_nlp_strategy(self.q_msg)
+                            if len(user_name) != 0 and self.chat_list.get(user_name) is not None:    
+                                text = determine_nlp_strategy(self.q_msg,self.chat_list[user_name]["history"])
+                            else:
+                                text = determine_nlp_strategy(self.q_msg,[])
                         elif answer != 'NO_ANSWER':
                             text = answer
+
+                       
+
 
                         if len(user_name) == 0:
                             self.a_msg = text
                         else:
                             self.a_msg = user_name + '，' + text
-
+                            if  self.chat_list.get(user_name) is not None:
+                                answer_info = dict()
+                                answer_info["role"] = "bot"
+                                answer_info["content"] = text
+                                self.chat_list[user_name]["history"].append(answer_info)
+                       
                     elif index == 2:
-                        self.a_msg = ['新来的宝贝记得点点关注噢！么么哒！', '我的宝贝{}欢迎你来到直播间，欢迎欢迎'.format(user_name), '欢迎{}宝贝来到我们的直播间，记得点点关注，给主播加加油噢！'.format(user_name)][
+                        self.a_msg = ['新来的宝贝记得点点关注噢！么么哒！', '我的宝贝{}欢迎你来到直播间，欢迎欢迎！'.format(user_name), '欢迎{}宝贝来到我们的直播间，记得点点关注，给主播加加油噢！'.format(user_name)][
                             random.randint(0, 2)]
                         
                     elif index == 3:
@@ -229,12 +253,12 @@ class FeiFei:
                         self.a_msg = ['感谢宝贝们的赞赞，比心比心', '谢谢我的宝宝{}的连续点赞了，谢谢你！'.format(user_name), '太感谢宝宝{}的赞赞啦！'.format(user_name)][
                             random.randint(0, 2)]
                     elif index == 7:
-                        self.a_msg = ['看见下面的小心心了吗？点一点！谁点得多！就是主播最好的朋友!', 
-                                      '咦?怎么没人点小心心?点点支持一下主播!主播十分需要你这个朋友!',
-                                      '点个小心心！主播给你画个心喔！',
+                        self.a_msg = ['看见下面不要钱的辣条了吗？点一点！谁点得多！就是主播最好的朋友!', 
+                                      '咦?怎么没人点赞啦?点点支持一下主播!主播十分需要你这个朋友!',
+                                      '给个小礼物！主播给你画个心喔！',
                                       '主播这么勤快！还不点点关注？',
-                                      '宝宝们！快来点点小心心！谁能点够100下就是主播最好最好的朋友了！',
-                                      '各位宝宝们！点下面小心心，给主播加加油吧！',
+                                      '宝宝们！快来点点赞！谁能点够100下就是主播最好最好的朋友了！',
+                                      '各位宝宝们！点点赞，给主播加加油吧！',
                                       '观众姥爷们!快关注起来！助力主播进步一点点！'][
                             random.randint(0, 6)]
                     self.last_speak_data = self.a_msg
@@ -264,6 +288,7 @@ class FeiFei:
                         explain = item["explain"][explain_key]
                         if len(explain) > 0:
                             self.a_msg = explain
+                            self.set_img = item['img']
                             self.last_speak_data = self.a_msg
                             self.speaking = True
                             MyThread(target=self.__say, args=['script']).start()
@@ -290,8 +315,26 @@ class FeiFei:
     def on_interact(self, interact: Interact):
 
         if interact.interact_type == 1:
-            self.interactive.append(interact)
+            if self.chat_list.get(interact.data["user"]) is None:
+                self.chat_list[interact.data["user"]] = dict()
+                self.chat_list[interact.data["user"]]["history"] = []  
+            user_history = dict()
+            user_history["role"] = "user"
+            user_history["content"] = interact.data["msg"]            
+            self.chat_list[interact.data["user"]]["history"].append(user_history)
+            self.chat_list[interact.data["user"]]["last_time"] = time.time()
+            if(cfg.key_chat_module != "chatglm2"):
+                #发送回答
+                msg = ""
+                for info in self.chat_list[interact.data["user"]]["history"]:
+                    if msg == "":
+                        msg = info['content']
+                    else:
+                        msg = msg + " \n "+ info['content']
 
+                interact.data["msg"] =  msg  
+            self.interactive.append(interact)
+            
         # 合并同类交互
         # 进入
         elif interact.interact_type == 2:
@@ -321,7 +364,7 @@ class FeiFei:
                         gifts.append(gift)
                     rm_list.append(itr)
            
-            if len(rm_list) > 1:
+            if len(rm_list) > 2:
                 for itr in rm_list:
                     self.interactive.remove(itr)
                 self.interactive.append(Interact("live", 5,  {"user":'多人',"gifts": gifts}))
@@ -380,7 +423,7 @@ class FeiFei:
                 if result == 2:
                     self.mood = self.mood + (chat_perception / 200.0)
                 elif result == 0:
-                    self.mood = self.mood - (chat_perception / 100.0)
+                     self.mood = self.mood - (chat_perception / 100.0)
             except BaseException as e:
                 print("[System] 情绪更新错误！")
                 print(e)
@@ -434,13 +477,14 @@ class FeiFei:
                     wsa_server.get_instance().add_cmd(content)
                 result = self.sp.to_sample(self.a_msg, self.__get_mood())
                 util.log(1, '合成音频完成. 耗时: {} ms 文件:{}'.format(math.floor((time.time() - tm) * 1000), result))
+                
                 if result is not None:            
                     MyThread(target=self.__send_audio, args=[result, styleType]).start()
                     return result
         except BaseException as e:
             print(e)
+           
         # print("tts失败！！！！！！！！！！！！！")
-        self.speaking = False
         return None
 
     def __play_sound(self, file_url):
@@ -458,7 +502,7 @@ class FeiFei:
                 audio_length = 3
             # with wave.open(file_url, 'rb') as wav_file: #wav音频长度
             #     audio_length = wav_file.getnframes() / float(wav_file.getframerate())
-            if audio_length <= config_util.config["interact"]["maxInteractTime"] or say_type == "script":
+            if audio_length <= config_util.config["interact"]["maxInteractTime"] or say_type == "script":  
                 if config_util.config["interact"]["playSound"]: # 展板播放
                     self.__play_sound(file_url)
                 else:#发送音频给ue和socket
@@ -472,7 +516,10 @@ class FeiFei:
                             consolidated_visemes = lip_sync_generator.consolidate_visemes(viseme_list)
                             content["Data"]["Lips"] = consolidated_visemes
                         except e:
-                            util.log(1, "唇型数字生成失败，无法使用新版ue5工程")     
+                            util.log(1, "唇型数字生成失败，无法使用新版ue5工程") 
+                    if self.set_img != "":
+                         content["Data"]["Image"] = self.set_img 
+                         self.set_img = ""    
                     wsa_server.get_instance().add_cmd(content)
                     if self.deviceConnect is not None:
                         try:
@@ -490,16 +537,22 @@ class FeiFei:
                         except socket.error as serr:
                             util.log(1,"远程音频输入输出设备已经断开：{}".format(serr))
 
-                if audio_length<30:
-                    self.speaking = False
+                
+                
                     
                 wsa_server.get_web_instance().add_cmd({"panelMsg": self.a_msg})
+                if not cfg.config["interact"]["playSound"]:
+                    message_to_send = self.a_msg[:20] + '...' if len(self.a_msg) > 20 else self.a_msg
+                    content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': message_to_send}}
+                    wsa_server.get_instance().add_cmd(content)
                 time.sleep(audio_length + 0.5)
                 wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
+                content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
+                wsa_server.get_instance().add_cmd(content)
                 if config_util.config["interact"]["playSound"]:
                     util.log(1, '结束播放！')
-            if audio_length>30:
                 self.speaking = False
+           
         except Exception as e:
             print(e)
 
@@ -549,8 +602,8 @@ class FeiFei:
         self.sleep = sleep
 
     def __add_invite(self):
-        while(1):
-            time.sleep(50)
+        while self.__running:
+            time.sleep(600)
             self.interactive.append(Interact("live", 7,{"user":'主播'}))
 
     def start(self):
@@ -565,7 +618,11 @@ class FeiFei:
         self.speaking = False
         self.playing = False
         self.sp.close()
+        self.interactive.clear()
         wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
+        content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
+        wsa_server.get_instance().add_cmd(content)
+        wsa_server.get_instance().clear()
         if self.deviceConnect is not None:
             self.deviceConnect.close()
             self.deviceConnect = None

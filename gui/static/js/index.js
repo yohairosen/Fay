@@ -91,7 +91,8 @@ new Vue({
                         character: ""
                     },
                     demoVideo: "",
-                    QnA: ""
+                    QnA: "",
+                    img: ""
                 });
                 this.editableTabsValue = newTabName;
             }
@@ -271,7 +272,8 @@ new Vue({
                                         character: item.explain.character
                                     },
                                     demoVideo: item.demoVideo,
-                                    QnA: item.QnA
+                                    QnA: item.QnA,
+                                    img: item.img
                                 }
                             }
                             _this.items_data = item_data_list
@@ -339,7 +341,8 @@ new Vue({
                         character: item.explain.character
                     },
                     demoVideo: item.demoVideo,
-                    QnA: item.QnA
+                    QnA: item.QnA,
+                    img: item.img
                 }
             }
             let xhr = new XMLHttpRequest()
@@ -432,7 +435,8 @@ new Vue({
                             character: ""
                         },
                         demoVideo: "",
-                        QnA: ""
+                        QnA: "",
+                        img: ""
                     })
                 }
                 if (changed) {

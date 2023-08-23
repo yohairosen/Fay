@@ -145,7 +145,7 @@ ul {
 .left_box .source ul .url {
     width: 750px;
     margin: 20px auto 0;
-    height: 40px;
+    height: 51px;
     display: flex;
 }
 
@@ -200,7 +200,7 @@ ul {
 .right_main {
     width: 915px;
     border: 1px solid #333333;
-    padding-bottom: 40px;
+    padding-bottom: 10px;
 }
 
 .right_main ul {
