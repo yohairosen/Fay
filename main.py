@@ -11,7 +11,7 @@ from gui import flask_server
 from gui.window import MainWindow
 from utils import config_util
 from scheduler.thread_manager import MyThread
-
+from core import fay_core
 
 def __clear_samples():
     if not os.path.exists("./samples"):
@@ -43,7 +43,9 @@ if __name__ == '__main__':
     config_util.load_config()
 
     ws_server = wsa_server.new_instance(port=10002)
+    feiFei = fay_core.new_instance()
     ws_server.start_server()
+    ws_server.set_fei_fei(feiFei)
     web_ws_server = wsa_server.new_web_instance(port=10003)
     web_ws_server.start_server()
 

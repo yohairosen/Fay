@@ -16,41 +16,48 @@ class MyServer:
         self.__port = port  # 端口号
         self.__listCmd = []  # 要发送的信息的列表
         self.__server: Serve = None
+        self.__message_value = None  # client返回消息的value
         self.__event_loop: AbstractEventLoop = None
         self.__running = True
         self.__pending = None
         self.isConnect = False
+        self.__clients = set()
+
 
     def __del__(self):
         self.stop_server()
 
     # 接收处理
     async def __consumer_handler(self, websocket, path):
-        async for message in websocket:
-            await asyncio.sleep(0.01)
+      async for message in websocket:
             await self.__consumer(message)
             
             
     # 发送处理
     async def __producer_handler(self, websocket, path):
         while self.__running:
-            await asyncio.sleep(0.01)
-            message = await self.__producer()
-            if message:
-                await websocket.send(message)
+            await asyncio.sleep(0.1)
+            if self.__listCmd:
+                message = await self.__producer()
+                if message and self.isConnect:
+                    for client in self.__clients:  # 发送给所有连接的客户端
+                        await client.send(message)
     
     async def __handler(self, websocket, path):
         self.isConnect = True
-        util.log(1,"websocket连接上:{}".format(self.__port))
+        self.__clients.add(websocket)  # 添加新连接
+        util.log(1, "websocket连接上:{}".format(self.__port))
         self.on_connect_handler()
-        consumer_task = asyncio.ensure_future(self.__consumer_handler(websocket, path))#接收
-        producer_task = asyncio.ensure_future(self.__producer_handler(websocket, path))#发送
-        done, self.__pending = await asyncio.wait([consumer_task, producer_task], return_when=asyncio.FIRST_COMPLETED, )
+        consumer_task = asyncio.ensure_future(self.__consumer_handler(websocket, path))
+        producer_task = asyncio.ensure_future(self.__producer_handler(websocket, path))
+        done, self.__pending = await asyncio.wait([consumer_task, producer_task], return_when=asyncio.FIRST_COMPLETED)
         for task in self.__pending:
             task.cancel()
             self.isConnect = False
-            util.log(1,"websocket连接断开:{}".format(self.__port))
+            util.log(1, "websocket连接断开:{}".format(self.__port))
             self.on_close_handler()
+        self.__clients.remove(websocket)  # 移除关闭的连接
+                
                 
     async def __consumer(self, message):
         self.on_revice_handler(message)
@@ -97,11 +104,17 @@ class MyServer:
 
     # 往要发送的命令列表中，添加命令
     def add_cmd(self, content):
-        if not self.__running:
+        if not self.__running :
             return
         jsonObj = json.dumps(content)
         self.__listCmd.append(jsonObj)
         # util.log('命令 {}'.format(content))
+
+    def clear(self):
+         self.__listCmd = []
+
+    def set_fei_fei(self):
+        pass
 
     # 开启服务
     def start_server(self):
@@ -133,6 +146,7 @@ class WebServer(MyServer):
         super().__init__(host, port)
 
     def on_revice_handler(self, message):
+       
         pass
     
     def on_connect_handler(self):
@@ -144,21 +158,29 @@ class WebServer(MyServer):
     def on_close_handler(self):
         pass
 
+    def set_fei_fei(self):
+        pass
+
 #数字人端server
 class HumanServer(MyServer):
     def __init__(self, host='0.0.0.0', port=10000):
         super().__init__(host, port)
+        self.feifei = None
 
     def on_revice_handler(self, message):
-        pass
+        if message == "Play  End":
+            self.feifei.set_play_end(True)
+        
     
     def on_connect_handler(self):
         web_server_instance = get_web_instance()  
+        content = {'Topic': 'Unreal', 'Data': {'Key': 'mood', 'Value': self.feifei.mood}}
+        self.add_cmd(content)
         web_server_instance.add_cmd({"is_connect": True}) 
         
 
     def on_send_handler(self, message):
-        # util.log(1, '向human发送 {}'.format(message))
+        util.log(1, '向human发送 {}'.format(message))
         if not self.isConnect:
             return None
         return message
@@ -166,6 +188,11 @@ class HumanServer(MyServer):
     def on_close_handler(self):
         web_server_instance = get_web_instance()  
         web_server_instance.add_cmd({"is_connect": False}) 
+        self.feifei.set_audio_queue([])
+        self.feifei.set_play_end(True)
+
+    def set_fei_fei(self, feifei):
+        self.feifei = feifei
 
         
 
@@ -187,7 +214,8 @@ class TestServer(MyServer):
     def on_close_handler(self):
         pass
 
-
+    def set_fei_fei(self,feifei):
+        pass
 
 #单例
 

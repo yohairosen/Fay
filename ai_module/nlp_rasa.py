@@ -1,7 +1,7 @@
 import json
 import requests
 
-def question(cont):
+def question(cont,communication_history=[]):
     url="http://localhost:5005/webhooks/rest/webhook"
     req = json.dumps({"sender": "user", "message": cont})
     headers = {'content-type': 'application/json'}

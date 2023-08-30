@@ -68,7 +68,7 @@ def __get_auth_id():
     return hashlib.md5(":".join([mac[e:e + 2] for e in range(0, 11, 2)]).encode("utf-8")).hexdigest()
 
 
-def question(text):
+def question(text,communication_history=[]):
     ws = None
     try:
         # 构造握手参数

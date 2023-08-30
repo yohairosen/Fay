@@ -152,6 +152,14 @@ Remote Android　　[Live2D](https://www.bilibili.com/video/BV1sx4y1d775/?vd_sou
 
 ## **三、升级日志**
 
+
+
+**2023.08.30：**
+
++ 调整gpt的消息记录方式；
++ 数字人端可回传Play End标记音频播放完成； [(WebSocket.md)](https://github.com/TheRamU/Fay/blob/main/WebSocket.md)
++ 增加接入数字人端音频预合成机制。
+
 **2023.08.23：**
 
 + 修复日志遗失问题；

@@ -62,10 +62,7 @@ def determine_nlp_strategy(msg,history):
         selected_module = modules.get(module_name)
         if selected_module is None:
             raise RuntimeError('灵聚key、yuan key、gpt key都没有配置！')   
-        if(cfg.key_chat_module == "chatglm2"):
-            text = selected_module.question(msg,history)  
-        else:
-            text = selected_module.question(msg)  
+        text = selected_module.question(msg,history)    
         util.log(1, '自然语言处理完成. 耗时: {} ms'.format(math.floor((time.time() - tm) * 1000)))
         if text == '哎呀，你这么说我也不懂，详细点呗' or text == '':
             util.log(1, '[!] 自然语言无语了！')
@@ -77,7 +74,12 @@ def determine_nlp_strategy(msg,history):
 
     return text
     
-
+__fei_fei = None
+def new_instance():
+    global __fei_fei
+    if __fei_fei is None:
+        __fei_fei = FeiFei()
+    return __fei_fei
 
 class FeiFei:
     def __init__(self):
@@ -114,6 +116,10 @@ class FeiFei:
         self.muting = False
         self.set_img = ""
         self.chat_list = {}
+        self.__play_end = True
+        self.__send_time = time.time()
+        self.__audio_time = 0
+        self.__audio_queue = [] 
 
     def __get_answer(self, interleaver, text):
 
@@ -175,12 +181,11 @@ class FeiFei:
             time.sleep(0.8)
             if self.speaking or self.sleep:
                 continue
-
             try:
                 # 简化逻辑：默认执行带货脚本，带货脚本执行其间有人互动，则执行完当前脚本就回应最后三条互动，回应完继续执行带货脚本
-                if i <= 3 and len(self.interactive) > i:
+                if ( i < 3 and len(self.interactive) > 0):
                     i += 1
-                    interact: Interact = self.interactive[0 - i]
+                    interact: Interact = self.interactive.pop(len(self.interactive)-1)
                     if interact.interact_type == 1:
                         self.q_msg = interact.data["msg"]
                     index = interact.interact_type
@@ -201,25 +206,19 @@ class FeiFei:
                             if not cfg.config["interact"]["playSound"]: # 非展板播放
                                 content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': "思考中..."}}
                                 wsa_server.get_instance().add_cmd(content)
-                            if len(user_name) != 0 and self.chat_list.get(user_name) is not None:    
-                                text = determine_nlp_strategy(self.q_msg,self.chat_list[user_name]["history"])
-                            else:
-                                text = determine_nlp_strategy(self.q_msg,[])
+                            text = determine_nlp_strategy(self.q_msg,self.chat_list[user_name]["history"])
+                            
                         elif answer != 'NO_ANSWER':
                             text = answer
-
-                       
-
-
                         if len(user_name) == 0:
                             self.a_msg = text
                         else:
                             self.a_msg = user_name + '，' + text
-                            if  self.chat_list.get(user_name) is not None:
-                                answer_info = dict()
-                                answer_info["role"] = "bot"
-                                answer_info["content"] = text
-                                self.chat_list[user_name]["history"].append(answer_info)
+                            
+                        answer_info = dict()
+                        answer_info["role"] = "bot"
+                        answer_info["content"] = text
+                        self.chat_list[user_name]["history"].append(answer_info)
                        
                     elif index == 2:
                         self.a_msg = ['新来的宝贝记得点点关注噢！么么哒！', '我的宝贝{}欢迎你来到直播间，欢迎欢迎！'.format(user_name), '欢迎{}宝贝来到我们的直播间，记得点点关注，给主播加加油噢！'.format(user_name)][
@@ -323,16 +322,6 @@ class FeiFei:
             user_history["content"] = interact.data["msg"]            
             self.chat_list[interact.data["user"]]["history"].append(user_history)
             self.chat_list[interact.data["user"]]["last_time"] = time.time()
-            if(cfg.key_chat_module != "chatglm2"):
-                #发送回答
-                msg = ""
-                for info in self.chat_list[interact.data["user"]]["history"]:
-                    if msg == "":
-                        msg = info['content']
-                    else:
-                        msg = msg + " \n "+ info['content']
-
-                interact.data["msg"] =  msg  
             self.interactive.append(interact)
             
         # 合并同类交互
@@ -401,17 +390,12 @@ class FeiFei:
     def __send_mood(self):
         while self.__running:
             time.sleep(3)
-            if not self.sleep and not config_util.config["interact"]["playSound"] and wsa_server.get_instance().isConnect:
+            if not self.sleep and not config_util.config["interact"]["playSound"]:
                 content = {'Topic': 'Unreal', 'Data': {'Key': 'mood', 'Value': self.mood}}
-                if not self.connect:
+                if  self.old_mood != self.mood:
                     wsa_server.get_instance().add_cmd(content)
-                    self.connect = True
-                else:
-                    if  self.old_mood != self.mood:
-                        wsa_server.get_instance().add_cmd(content)
-                        self.old_mood = self.mood
-            else:
-                self.connect = False
+                    self.old_mood = self.mood
+           
 
     # 更新情绪
     def __update_mood(self, typeIndex):
@@ -423,10 +407,11 @@ class FeiFei:
                 if result == 2:
                     self.mood = self.mood + (chat_perception / 200.0)
                 elif result == 0:
-                     self.mood = self.mood - (chat_perception / 100.0)
+                    self.mood = self.mood - (chat_perception / 100.0)
             except BaseException as e:
                 print("[System] 情绪更新错误！")
                 print(e)
+                self.mood = 1
 
         elif typeIndex == 2:
             self.mood = self.mood + (perception["join"] / 100.0)
@@ -466,15 +451,10 @@ class FeiFei:
             if len(self.a_msg) < 1:
                 self.speaking = False
             else:
-                # print(self.__get_mood().name + self.a_msg)
                 util.printInfo(1, '菲菲', '({}) {}'.format(self.__get_mood(), self.a_msg))
                 MyThread(target=storer.storage_live_interact, args=[Interact('Fay', 0, {'user': 'Fay', 'msg': self.a_msg})]).start()
                 util.log(1, '合成音频...')
                 tm = time.time()
-                #文字也推送出去，为了ue5
-                if not config_util.config["interact"]["playSound"]: # 非展板播放
-                    content = {'Topic': 'Unreal', 'Data': {'Key': 'text', 'Value': self.a_msg}}
-                    wsa_server.get_instance().add_cmd(content)
                 result = self.sp.to_sample(self.a_msg, self.__get_mood())
                 util.log(1, '合成音频完成. 耗时: {} ms 文件:{}'.format(math.floor((time.time() - tm) * 1000), result))
                 
@@ -495,19 +475,12 @@ class FeiFei:
 
     def __send_audio(self, file_url, say_type):
         try:
-            try:
-                logging.getLogger('eyed3').setLevel(logging.ERROR)
-                audio_length = eyed3.load(file_url).info.time_secs #mp3音频长度
-            except Exception as e:
-                audio_length = 3
-            # with wave.open(file_url, 'rb') as wav_file: #wav音频长度
-            #     audio_length = wav_file.getnframes() / float(wav_file.getframerate())
-            if audio_length <= config_util.config["interact"]["maxInteractTime"] or say_type == "script":  
+            if self.__running:  
                 if config_util.config["interact"]["playSound"]: # 展板播放
                     self.__play_sound(file_url)
                 else:#发送音频给ue和socket
                      #推送ue
-                    content = {'Topic': 'Unreal', 'Data': {'Key': 'audio', 'Value': os.path.abspath(file_url), 'Text': self.a_msg, 'Time': audio_length, 'Type': say_type}}
+                    content = {'Topic': 'Unreal', 'Data': {'Key': 'audio', 'Value': os.path.abspath(file_url), 'Text': self.a_msg,  'Type': say_type}}
                     #计算lips
                     if platform.system() == "Windows":
                         try:
@@ -516,11 +489,24 @@ class FeiFei:
                             consolidated_visemes = lip_sync_generator.consolidate_visemes(viseme_list)
                             content["Data"]["Lips"] = consolidated_visemes
                         except e:
-                            util.log(1, "唇型数字生成失败，无法使用新版ue5工程") 
+                            util.log(1, "唇型数据生成失败，无法使用新版ue5工程") 
+                        total_time = 0
+                        for phoneme in content["Data"]["Lips"]:
+                            total_time += phoneme["Time"]
+                        content["Data"]["Time"] = total_time/1000
+                        audio_length = content["Data"]["Time"] 
+                    else:
+                        try:
+                            logging.getLogger('eyed3').setLevel(logging.ERROR)
+                            audio_length = eyed3.load(file_url).info.time_secs #mp3音频长度
+                        except Exception as e:
+                            audio_length = 3
                     if self.set_img != "":
                          content["Data"]["Image"] = self.set_img 
-                         self.set_img = ""    
-                    wsa_server.get_instance().add_cmd(content)
+                         self.set_img = ""   
+                    self.__audio_queue.append(content)
+                    # wsa_server.get_instance().add_cmd(content)
+
                     if self.deviceConnect is not None:
                         try:
                             self.deviceConnect.send(b'\x00\x01\x02\x03\x04\x05\x06\x07\x08') # 发送音频开始标志，同时也检查设备是否在线
@@ -542,16 +528,28 @@ class FeiFei:
                     
                 wsa_server.get_web_instance().add_cmd({"panelMsg": self.a_msg})
                 if not cfg.config["interact"]["playSound"]:
-                    message_to_send = self.a_msg[:20] + '...' if len(self.a_msg) > 20 else self.a_msg
-                    content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': message_to_send}}
-                    wsa_server.get_instance().add_cmd(content)
-                time.sleep(audio_length + 0.5)
-                wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
-                content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
-                wsa_server.get_instance().add_cmd(content)
-                if config_util.config["interact"]["playSound"]:
-                    util.log(1, '结束播放！')
-                self.speaking = False
+                    if audio_length < 8:
+                        time.sleep(2.1)
+                    else:
+                        time.sleep(audio_length-5)
+
+                    self.speaking = False
+                    
+                if  cfg.config["interact"]["playSound"]:
+                    try:
+                        logging.getLogger('eyed3').setLevel(logging.ERROR)
+                        audio_length = eyed3.load(file_url).info.time_secs #mp3音频长度
+                    except Exception as e:
+                        audio_length = 3
+                    time.sleep(audio_length + 0.5)
+                    wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
+                    if config_util.config["interact"]["playSound"]:
+                        util.log(1, '结束播放！')
+                    self.speaking = False
+            
+
+             
+
            
         except Exception as e:
             print(e)
@@ -606,11 +604,47 @@ class FeiFei:
             time.sleep(600)
             self.interactive.append(Interact("live", 7,{"user":'主播'}))
 
+    def __send_to_audio(self):
+        while self.__running:
+            time.sleep(0.5)
+            if (time.time() - self.__send_time >= 0.5 + self.__audio_time) and not self.__play_end:
+                    self.set_play_end(True)
+            if self.__audio_queue and self.__play_end:
+                self.set_play_end(False)
+                message = self.__audio_queue.pop(0)
+                #文字
+                content = {'Topic': 'Unreal', 'Data': {'Key': 'text', 'Value': message["Data"]["Text"]}}
+                wsa_server.get_instance().add_cmd(content)
+                #音频
+                wsa_server.get_instance().add_cmd(message)
+                #日志
+                message_to_send = message["Data"]["Text"][:20] + '...' if len(message["Data"]["Text"]) > 20 else message["Data"]["Text"]
+                content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': message_to_send}}
+                wsa_server.get_instance().add_cmd(content)
+                self.__send_time = time.time()
+                self.__audio_time = message["Data"]["Time"]
+                time.sleep(self.__audio_time)
+
+    def set_play_end(self,play_end):
+        self.__play_end = play_end
+        if play_end:
+            content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
+            wsa_server.get_instance().add_cmd(content)
+            if config_util.config["interact"]["playSound"]:
+                util.log(1, '结束播放！')
+
+    def set_audio_queue(self,queue):
+        self.__audio_queue = queue
+
     def start(self):
         MyThread(target=self.__send_mood).start()
         MyThread(target=self.__auto_speak).start()
         MyThread(target=self.__update_mood_runnable).start()
         MyThread(target=self.__add_invite).start()
+        MyThread(target=self.__send_to_audio).start()
+        wsa_server.get_instance().set_fei_fei(self)
+        self.__audio_queue = []
+        self.__play_end = True
 
     def stop(self):
         self.__running = False

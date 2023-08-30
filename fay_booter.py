@@ -8,7 +8,7 @@ import wave
 
 from core.interact import Interact
 from core.recorder import Recorder
-from core.fay_core import FeiFei
+from core import fay_core
 from core.viewer import Viewer
 from scheduler.thread_manager import MyThread
 from utils import util, config_util, stream_util, ngrok_util
@@ -17,7 +17,7 @@ from core.wsa_server import MyServer
 
 
 
-feiFei: FeiFei = None
+feiFei = None
 viewerListener: Viewer = None
 recorderListener: Recorder = None
 
@@ -251,7 +251,7 @@ def start():
     config_util.load_config()
 
     util.log(1, '开启核心服务...')
-    feiFei = FeiFei()
+    feiFei = fay_core.new_instance()
     feiFei.start()
 
     liveRoom = config_util.config['source']['liveRoom']
@@ -284,7 +284,7 @@ def start():
 
 if __name__ == '__main__':
     ws_server: MyServer = None
-    feiFei: FeiFei = None
+    feiFei = None
     viewerListener: Viewer = None
     recorderListener: Recorder = None
     start()
