@@ -21,22 +21,23 @@
             "indifferent": 10,
             "join": 10
         },
-        "playSound": true
+        "playSound": false
     },
     "items": [
         {
-            "QnA": "qa_demo.xlsx",
-            "demoVideo": "C:/Demo.mp4",
-            "enabled": false,
+            "QnA": "",
+            "demoVideo": "",
+            "enabled": true,
             "explain": {
                 "character": "",
-                "discount": "",
-                "intro": "",
+                "discount": "\u5f88\u4fbf\u5b9c",
+                "intro": "\u8fd9\u4e5f\u662f\u4e2a\u597d\u4e1c\u897f\u554a",
                 "price": "",
                 "promise": "",
                 "usage": ""
             },
-            "name": ""
+            "img": "B",
+            "name": "B\u5546\u54c1"
         }
     ],
     "source": {
