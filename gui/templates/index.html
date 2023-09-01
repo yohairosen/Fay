@@ -135,7 +135,7 @@
                             <li class="url">
                                 <el-switch v-model="source_liveRoom_enabled" active-color="#13ce66" inactive-color="#ff4949">
                                 </el-switch>
-                                <p>抖  音</p>
+                                <p>弹幕地址</p>
                                 <el-input v-model="source_liveRoom_url" placeholder="请输入内容"></el-input>
                             </li>
                             <li class="url">
@@ -227,6 +227,7 @@
                             </ul>
                         </el-tab-pane>
                     </el-tabs>
+                    <div style="text-align: center;margin-bottom: 4px;"><el-button type="button" style="width:200px" @click=postData()>保存</el-button></div>
                     <br v-if="items_data.length==0">
                 </div>
             </div>

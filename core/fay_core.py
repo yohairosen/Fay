@@ -31,6 +31,7 @@ from ai_module import nlp_xfaiui
 from ai_module import nlp_yuan
 from ai_module import nlp_gpt
 from ai_module import nlp_lingju
+from ai_module import nlp_rwkv_api
 from ai_module import nlp_ChatGLM2
 
 import platform
@@ -44,6 +45,7 @@ modules = {
     "nlp_yuan": nlp_yuan, 
     "nlp_gpt": nlp_gpt,
     "nlp_lingju": nlp_lingju,
+    "nlp_rwkv_api":nlp_rwkv_api,
     "nlp_chatglm2": nlp_ChatGLM2
 
 }
@@ -290,6 +292,7 @@ class FeiFei:
                             self.set_img = item['img']
                             self.last_speak_data = self.a_msg
                             self.speaking = True
+                            self.last_quest_time = time.time()
                             MyThread(target=self.__say, args=['script']).start()
             except BaseException as e:
                 print(e)
@@ -607,7 +610,7 @@ class FeiFei:
     def __send_to_audio(self):
         while self.__running:
             time.sleep(0.5)
-            if (time.time() - self.__send_time >= 0.5 + self.__audio_time) and not self.__play_end:
+            if (time.time() - self.__send_time >= 1 + self.__audio_time) and not self.__play_end:
                     self.set_play_end(True)
             if self.__audio_queue and self.__play_end:
                 self.set_play_end(False)
@@ -637,15 +640,16 @@ class FeiFei:
         self.__audio_queue = queue
 
     def start(self):
+        self.__audio_queue = []
+        self.__play_end = True
+        self.__running = True
         MyThread(target=self.__send_mood).start()
         MyThread(target=self.__auto_speak).start()
         MyThread(target=self.__update_mood_runnable).start()
         MyThread(target=self.__add_invite).start()
         MyThread(target=self.__send_to_audio).start()
         wsa_server.get_instance().set_fei_fei(self)
-        self.__audio_queue = []
-        self.__play_end = True
-
+    
     def stop(self):
         self.__running = False
         song_player.stop()

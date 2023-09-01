@@ -34,6 +34,7 @@ class WS_Client:
             if data["Type"] == 1:#留言
                 if len(interact_datas) >= 5:
                     interact_datas.pop()
+
                 interact = Interact("live", 1, {"user": json.loads(data["Data"])["User"]["Nickname"], "msg": json.loads(data["Data"])["Content"]})
                 interact_datas.append(interact)
             elif data["Type"] == 2:#点赞
@@ -101,7 +102,7 @@ class Viewer:
         MyThread(target=self.__get_package_listen_interact_runnable).start()
 
     def __run_dy_msg_ws(self):
-        self.dy_msg_ws = WS_Client('ws://127.0.0.1:8888')
+        self.dy_msg_ws = WS_Client(config_util.config['source']['liveRoom']['url'])
 
     def start(self):
         MyThread(target=self.__start).start()
