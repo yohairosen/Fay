@@ -4,8 +4,8 @@ new Vue({
         return {
             testlist: [
                 {
-                    tab_name: "first",
-                    name: "first",
+                    tab_name: "1",
+                    name: "1",
                 },
                 {
                     tab_name: "2",
@@ -59,7 +59,7 @@ new Vue({
             }],
             activeName: 'first',
 
-            editableTabsValue: '1',
+            editableTabsValue: 'first',
             tabIndex: 1,
             editableTabs: [{
                 title: 'Tab 1',
@@ -97,20 +97,24 @@ new Vue({
                 this.editableTabsValue = newTabName;
             }
             if (action === 'remove') {
-                let tabs = this.items_data;
-                let activeName = this.editableTabsValue;
-                if (activeName === targetName) {
-                    tabs.forEach((tab, index) => {
-                        if (tab.tab_name === targetName) {
-                            let nextTab = tabs[index + 1] || tabs[index - 1];
-                            if (nextTab) {
-                                activeName = nextTab.name;
+               
+                if (this.items_data.length > 1) {
+                    let tabs = this.items_data;
+                    let activeName = this.editableTabsValue;
+                    if (activeName === targetName) {
+                        tabs.forEach((tab, index) => {
+                            if (tab.tab_name === targetName) {
+                                let nextTab = tabs[index + 1] || tabs[index - 1];
+                                if (nextTab) {
+                                    activeName = nextTab.tab_name;
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
+
+                    this.editableTabsValue = activeName;
+                    this.items_data = tabs.filter(tab => tab.tab_name !== targetName);
                 }
-                this.editableTabsValue = activeName;
-                this.items_data = tabs.filter(tab => tab.tab_name !== targetName);
             }
         },
         show() {

@@ -170,7 +170,7 @@
             </div>
             <div class="right">
                 <div class="right_main">
-                    <el-tabs v-model="activeName" type="card" @tab-click="handleClick" editable @edit="handleTabsEdit">
+                    <el-tabs v-model="editableTabsValue" type="card" @tab-click="handleClick" editable @edit="handleTabsEdit">
                         <el-tab-pane :label="'商品'+(index+1)" :name="itme.tab_name" v-for="(itme, index) in items_data" :key="index">
                             <ul>
                                 <li>
@@ -225,9 +225,10 @@
                                     </el-switch>
                                 </li>
                             </ul>
+                            <div  style="text-align: center;margin-bottom: 4px;"><el-button type="button" style="width:200px" @click=postData()>保存</el-button></div>
+
                         </el-tab-pane>
                     </el-tabs>
-                    <div style="text-align: center;margin-bottom: 4px;"><el-button type="button" style="width:200px" @click=postData()>保存</el-button></div>
                     <br v-if="items_data.length==0">
                 </div>
             </div>

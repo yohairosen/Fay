@@ -633,8 +633,8 @@ class FeiFei:
         if play_end:
             content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}}
             wsa_server.get_instance().add_cmd(content)
-            if config_util.config["interact"]["playSound"]:
-                util.log(1, '结束播放！')
+            # if config_util.config["interact"]["playSound"]:
+            #     util.log(1, '结束播放！')
 
     def set_audio_queue(self,queue):
         self.__audio_queue = queue
@@ -648,7 +648,6 @@ class FeiFei:
         MyThread(target=self.__update_mood_runnable).start()
         MyThread(target=self.__add_invite).start()
         MyThread(target=self.__send_to_audio).start()
-        wsa_server.get_instance().set_fei_fei(self)
     
     def stop(self):
         self.__running = False
