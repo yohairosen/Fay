@@ -56,6 +56,11 @@ Remote Android　　[Live2D](https://www.bilibili.com/video/BV1sx4y1d775/?vd_sou
 
 
 
+抖音监听 https://github.com/wwengg/douyin
+b站监听 https://github.com/wangzai23333/blivedm
+
+
+
 
 ### **与数字形象通讯**（非必须,控制器需要关闭“面板播放”）
 
