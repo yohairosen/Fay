@@ -87,17 +87,16 @@ class QAService:
                 items.append(item)
         return items
 
-    def __read_qna(self, filename) -> list:
+    def __read_qna(self, filename):
         qna = []
         try:
             wb = load_workbook(filename)
-            sheets = wb.worksheets
-            sheet = sheets[0]
-            for row in sheet.rows:
+            sheet = wb.active
+            for row in sheet.iter_rows(min_row=2, values_only=True):
                 if len(row) >= 2:
-                    qna.append([row[0].value.split(";"), row[1].value])
+                    qna.append([row[0].split(";"), row[1]])
         except BaseException as e:
-            print("无法读取Q&A文件 {} -> ".format(filename) + str(e))
+            print(f"无法读取Q&A文件 {filename} -> {e}")
         return qna
 
     def __get_keyword(self, keyword_dict, text):
