@@ -368,12 +368,14 @@ new Vue({
         },
         postStartLive() {
             this.postData()
-            this.live_state = 2
-            let url = "http://127.0.0.1:5000/api/start-live";
-            let xhr = new XMLHttpRequest()
-            xhr.open("post", url)
-            xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
-            xhr.send()
+            this.timer = setTimeout(()=>{   //设置延迟执行
+                this.live_state = 2
+                let url = "http://127.0.0.1:5000/api/start-live";
+                let xhr = new XMLHttpRequest()
+                xhr.open("post", url)
+                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+                xhr.send()
+           },1000)
         },
         postStopLive() {
             this.live_state = 3

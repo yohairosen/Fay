@@ -25,6 +25,7 @@ from utils import util, storer, config_util
 import pygame
 from utils import config_util as cfg
 from core import qa_service
+from ai_module import nlp_cemotion
 
 #nlp
 from ai_module import nlp_xfaiui
@@ -122,6 +123,7 @@ class FeiFei:
         self.__send_time = time.time()
         self.__audio_time = 0
         self.__audio_queue = [] 
+        self.cemotion = None
 
     def __get_answer(self, interleaver, text):
 
@@ -405,12 +407,20 @@ class FeiFei:
         perception = config_util.config["interact"]["perception"]
         if typeIndex == 1:
             try:
-                result = xf_ltp.get_sentiment(self.q_msg)
-                chat_perception = perception["chat"]
-                if result == 2:
-                    self.mood = self.mood + (chat_perception / 200.0)
-                elif result == 0:
-                    self.mood = self.mood - (chat_perception / 100.0)
+                if cfg.ltp_mode == "cemotion":
+                    result = nlp_cemotion.get_sentiment(self.cemotion,self.q_msg)
+                    chat_perception = perception["chat"]
+                    if result >= 0.5 and result <= 1:
+                       self.mood = self.mood + (chat_perception / 200.0)
+                    elif result <= 0.2:
+                       self.mood = self.mood - (chat_perception / 100.0)
+                else:
+                    result = xf_ltp.get_sentiment(self.q_msg)
+                    chat_perception = perception["chat"]
+                    if result == 1:
+                        self.mood = self.mood + (chat_perception / 200.0)
+                    elif result == -1:
+                        self.mood = self.mood - (chat_perception / 100.0)
             except BaseException as e:
                 print("[System] 情绪更新错误！")
                 print(e)
@@ -643,6 +653,9 @@ class FeiFei:
         self.__audio_queue = []
         self.__play_end = True
         self.__running = True
+        if cfg.ltp_mode == "cemotion":
+            from cemotion import Cemotion
+            self.cemotion = Cemotion()
         MyThread(target=self.__send_mood).start()
         MyThread(target=self.__auto_speak).start()
         MyThread(target=self.__update_mood_runnable).start()
