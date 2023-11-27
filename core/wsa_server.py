@@ -27,21 +27,30 @@ class MyServer:
     def __del__(self):
         self.stop_server()
 
-    # 接收处理
+ # 接收处理
     async def __consumer_handler(self, websocket, path):
-      async for message in websocket:
-            await self.__consumer(message)
+        try:
+            async for message in websocket:
+                await asyncio.sleep(0.01)
+                await self.__consumer(message)
+        except websockets.exceptions.ConnectionClosedError as e:
+            util.log(1, f"WebSocket 连接关闭: {e}")
+            self.isConnect = False
+            self.on_close_handler()
             
             
     # 发送处理
     async def __producer_handler(self, websocket, path):
-        while self.__running:
-            await asyncio.sleep(0.1)
-            if self.__listCmd:
+        try:
+            while self.__running:
+                await asyncio.sleep(0.01)
                 message = await self.__producer()
                 if message and self.isConnect:
-                    for client in self.__clients:  # 发送给所有连接的客户端
-                        await client.send(message)
+                    await websocket.send(message)
+        except websockets.exceptions.ConnectionClosedError as e:
+            util.log(1, f"WebSocket 连接关闭: {e}")
+            self.isConnect = False
+            self.on_close_handler()
     
     async def __handler(self, websocket, path):
         self.isConnect = True
