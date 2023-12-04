@@ -156,6 +156,11 @@ b站监听 https://github.com/wangzai23333/blivedm
 
 ## **三、升级日志**
 
+**2023.12.4**
+
++ 接入fastgpt nlp;
++ 修复唇形异常报错问题;
+
 **2023.11.27**
 
 + 提高websocket的稳定性；

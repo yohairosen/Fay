@@ -34,6 +34,7 @@ from ai_module import nlp_gpt
 from ai_module import nlp_lingju
 from ai_module import nlp_ChatGLM2
 from ai_module import nlp_rwkv_api
+from ai_module import nlp_fastgpt
 
 import platform
 if platform.system() == "Windows":
@@ -47,7 +48,8 @@ modules = {
     "nlp_gpt": nlp_gpt,
     "nlp_lingju": nlp_lingju,
     "nlp_chatglm2": nlp_ChatGLM2,
-    "nlp_rwkv_api": nlp_rwkv_api
+    "nlp_rwkv_api": nlp_rwkv_api,
+    "nlp_fastgpt": nlp_fastgpt
 
 }
 
@@ -501,7 +503,8 @@ class FeiFei:
                             viseme_list = lip_sync_generator.generate_visemes(os.path.abspath(file_url))
                             consolidated_visemes = lip_sync_generator.consolidate_visemes(viseme_list)
                             content["Data"]["Lips"] = consolidated_visemes
-                        except e:
+                        except Exception as e:
+                            print(e)
                             util.log(1, "唇型数字生成失败，无法使用新版ue5工程") 
                         total_time = 0
                         for phoneme in content["Data"]["Lips"]:

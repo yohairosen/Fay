@@ -22,6 +22,7 @@ key_yuan_1_0_phone = None
 key_chatgpt_api_key = None
 key_chat_module = None
 ltp_mode = None
+key_fast_api_key = None
 
 def load_config():
     global config
@@ -43,6 +44,8 @@ def load_config():
     global key_lingju_api_key
     global key_lingju_api_authcode
     global ltp_mode 
+    global key_fast_gpt_key
+
 
     system_config = ConfigParser()
     system_config.read('system.conf', encoding='UTF-8')
@@ -63,6 +66,7 @@ def load_config():
     key_lingju_api_key = system_config.get('key', 'lingju_api_key')
     key_lingju_api_authcode = system_config.get('key', 'lingju_api_authcode')
     ltp_mode = system_config.get('key', 'ltp_mode')
+    key_fast_gpt_key = system_config.get('key', 'fast_gpt_key')
 
     config = json.load(codecs.open('config.json', encoding='utf-8'))
 
