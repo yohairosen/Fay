@@ -283,6 +283,7 @@ class FeiFei:
                     util.log(1, "远程音频发送完成：{}".format(total))
                 except socket.error as serr:
                     util.log(1,"远程音频输入输出设备已经断开：{}".format(serr))
+                    wsa_server.get_web_instance().add_cmd({"remote_audio_connect": False})
                     
             time.sleep(audio_length + 0.5)
             wsa_server.get_web_instance().add_cmd({"panelMsg": ""})
@@ -303,6 +304,7 @@ class FeiFei:
                 except Exception as serr:
                     util.log(1,"远程音频输入输出设备已经断开：{}".format(serr))
                     self.deviceConnect = None
+                    wsa_server.get_web_instance().add_cmd({"remote_audio_connect": False})
             time.sleep(5)
 
     def __accept_audio_device_output_connect(self):
@@ -315,6 +317,7 @@ class FeiFei:
                 self.deviceConnect,addr=self.deviceSocket.accept()   #接受TCP连接，并返回新的套接字与IP地址
                 MyThread(target=self.__device_socket_keep_alive).start() # 开启心跳包检测
                 util.log(1,"远程音频输入输出设备连接上：{}".format(addr))
+                wsa_server.get_web_instance().add_cmd({"remote_audio_connect": True})
                 while self.deviceConnect: #只允许一个设备连接
                     time.sleep(1)
         except Exception as err:

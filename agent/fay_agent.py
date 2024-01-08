@@ -96,11 +96,6 @@ class FayAgentCore():
                 description=weather_tool.description
             ),
             Tool(
-                name=calculator_tool.name,
-                func=calculator_tool.run,
-                description=calculator_tool.description
-            ),
-            Tool(
                 name=check_sensor_tool.name,
                 func=check_sensor_tool.run,
                 description=check_sensor_tool.description
@@ -213,9 +208,9 @@ class FayAgentCore():
         tool_names = [tool.name for tool in self.tools if tool.name != SetChatStatus().name and tool.name != Say().name]
         tools_prompt += "、".join(tool_names) + "]"
         template = """
+现在时间是：now_time。
 你是一个智能家居系统中的AI，负责协助主人处理日常事务和智能设备的操作。当主人提出要求时，如果需要使用特定的工具或执行特定的操作，请严格回复“agent: {human_input}”字符串。如果主人只是进行普通对话或询问信息，直接以文本内容回答即可。你可以使用的工具或执行的任务包括：。
 """ +  tools_prompt + "等。" +"""
-现在时间是：now_time
 请依据以下信息回复主人：
 chat_history
 

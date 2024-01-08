@@ -75,7 +75,8 @@ new Vue({
             is_connect: false,
             wake_word_enabled:false,
             wake_word: '',
-            loading: false
+            loading: false,
+            remote_audio_connect: false
 
         }
     },
@@ -224,6 +225,10 @@ new Vue({
                         _this.play_sound_enabled = true
                         _this.postData()
                     }
+                }
+                let remote_audio_connect = data.remote_audio_connect
+                if(remote_audio_connect != undefined){
+                    _this.remote_audio_connect = remote_audio_connect
                 }
             }
         },

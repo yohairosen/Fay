@@ -1,4 +1,4 @@
-[`English`](https://github.com/TheRamU/Fay/blob/main/README_EN.md)
+[`English`](README_EN.md)
 
 <div align="center">
     <br>
@@ -73,23 +73,44 @@ python main.py
 + 仓库地址：https://github.com/xszyou/fay-android
 
 ### **更新日志**
+2024.01.08:
+
+远程音频连接状态显示✓
+
+执行任务时记录时间✓
+
+去除计算tool，防止用于时间计算而出错✓
+
 2024.01.01:
+
 openai token计算✓
+
 优化ReAct Agent 与 LLM Chain自动切换逻辑✓
+
 *添加双记忆机制：长时记忆流及短时聊天记忆✓
+
 修复record.py asr bug✓
+
 提高远程音频（android 连接器）的稳定性✓
+
 修复执行时间计算bug✓
+
 优化语音输出逻辑✓
 
 2023.12.25:
 
 *实现agent ReAct与LLM chain自动切换逻辑✓
+
 聊天窗区分任务消息✓
+
 修复删除日程bug✓
+
 优化远程音频逻辑✓
+
 等待处理引入加载中效果✓
+
 优化prompt以解决日程任务递归调用问题✓
+
 修复一次性日程清除的bug✓
 
 

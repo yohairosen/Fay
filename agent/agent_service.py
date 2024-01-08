@@ -3,6 +3,7 @@ import threading
 import datetime
 import time
 from agent.fay_agent import FayAgentCore
+from agent.tools.QueryTime import QueryTime
 from core import fay_core
 
 scheduled_tasks = {}
@@ -54,7 +55,7 @@ def parse_repeat_rule(rule, task_time):
 # 执行任务
 def execute_task(task_time, id, content):
     agent.is_chat = False
-    fay_core.send_for_answer("执行任务->立刻" + content)
+    fay_core.send_for_answer(QueryTime().run("") + " 执行任务->立刻" + content)
     if id in scheduled_tasks:
         del scheduled_tasks[id]
     # 如果不重复，执行后删除记录
