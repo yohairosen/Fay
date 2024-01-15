@@ -73,6 +73,7 @@ python main.py
 + 仓库地址：https://github.com/xszyou/fay-android
 
 ### **更新日志**
+
 2024.01.15:
 
 新增前置词唤醒方式；
