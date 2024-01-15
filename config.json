@@ -30,6 +30,8 @@
             "device": "\u9ea6\u514b\u98ce (HD Webcam C525)",
             "enabled": false
         },
-        "wake_word_enabled": false
+        "wake_word": "",
+        "wake_word_enabled": false,
+        "wake_word_type": "common"
     }
 }
