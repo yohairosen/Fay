@@ -112,6 +112,13 @@ def api_send():
     text = fay_core.send_for_answer("主人文字说了：" + info['msg'])
     return '{"result":"successful","msg":"'+text+'"}'
 
+
+@__app.route('/api/send/v1/chat/completions', methods=['post'])
+def api_send_v1_chat_completions():
+    data = request.values.get('content')
+    text = fay_core.send_for_answer("主人文字说了：" + data)
+    return '{"result":"successful","msg":"'+text+'"}'
+
 @__app.route('/api/get-msg', methods=['post'])
 def api_get_Msg():
     contentdb = Content_Db()

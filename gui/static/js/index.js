@@ -76,7 +76,15 @@ new Vue({
             wake_word_enabled:false,
             wake_word: '',
             loading: false,
-            remote_audio_connect: false
+            remote_audio_connect: false,
+            wake_word_type: 'common',
+            wake_word_type_options: [{
+                value: 'common',
+                label: '普通'
+            }, {
+                value: 'front',
+                label: '前置词'
+            }],
 
         }
     },
@@ -253,6 +261,7 @@ new Vue({
                             let items = config["items"]
                             _this.wake_word_enabled = source["wake_word_enabled"]
                             _this.wake_word = source["wake_word"]
+                            _this.wake_word_type = source["wake_word_type"]
                             _this.play_sound_enabled = interact["playSound"]
                             _this.visualization_detection_enabled = interact["visualization"]
                             _this.source_record_enabled = source["record"]["enabled"]
@@ -317,7 +326,8 @@ new Vue({
                             "device": this.source_record_device
                         },
                         "wake_word_enabled": this.wake_word_enabled,
-                        "wake_word": this.wake_word
+                        "wake_word": this.wake_word,
+                        "wake_word_type": this.wake_word_type
                     },
                     "attribute": {
                         "voice": this.attribute_voice,

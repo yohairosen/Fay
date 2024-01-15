@@ -110,6 +110,15 @@
                                         </li>
                                         <br>
                                         <li>
+                                            <p>唤醒方式：</p>
+                                            <el-select v-model="wake_word_type" placeholder="请选择">
+                                                <el-option v-for="item in wake_word_type_options" :key="item.value"
+                                                    :label="item.label" :value="item.value">
+                                                </el-option>
+                                            </el-select>
+                                        </li>
+                                        <br>
+                                        <li>
                                             <p> 远程音频：</p>
                                             <p style = "text-align: left;color: #67c23a" v-if="remote_audio_connect" >已连接 </p>
                                             <p style = "text-align: left;"  v-else>未连接 </p>
