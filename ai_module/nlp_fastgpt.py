@@ -11,15 +11,11 @@ from urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 import json
 
-#代理服务器的配置方式，参考链接https://blog.csdn.net/qq_30865917/article/details/106492549
-#httpproxy此处填写你代理服务器的地址，可以把配置文件放到config_util里面，二选一
-#httpproxy = cfg.chatgpt_httpproxy
-httpproxy = '127.0.0.1:7890' 
-#如果要关闭代理直接访问，比如本地有加速器，则proxy_falg = '0';
-proxy_flag = '1' 
+httpproxy = cfg.proxy_config
+proxy_flag = str(cfg.is_proxy)
 
 def question(cont,communication_history=[]):
-    url= "https://fastgpt.run/api/v1/chat/completions"
+    url= "https://api.fastgpt.in/api/v1/chat/completions"
        
     session = requests.Session()
     session.verify = False
@@ -77,7 +73,10 @@ def question(cont,communication_history=[]):
         response.raise_for_status()  # 检查响应状态码是否为200
 
         result = json.loads(response.text)
-        response_text = result["choices"][0]["message"]["content"]
+        if result.get("choices"):
+            response_text = result["choices"][0]["message"]["content"]
+        else:
+            response_text = result["message"]
         
 
     except requests.exceptions.RequestException as e:

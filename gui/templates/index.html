@@ -12,7 +12,7 @@
     <!-- 引入element-ui样式 -->
     <!-- <link rel="stylesheet" href="./css/element.css"> -->
     <link rel="stylesheet" href="{{ url_for('static',filename='css/element.css') }}"></link>
-    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/element-ui/2.15.14/theme-chalk/index.css">
     <script src="/static/live2d/autoload.js"></script>
 
     <title>Fay</title>
@@ -122,6 +122,13 @@
                                        <p style="text-align: left;" v-if="play_sound_enabled">是</p>
                                        <p style="text-align: left;" v-else>否</p>
                                     </li>
+                                    <br>
+                                    <li>
+                                        <p> 远程音频：</p>
+                                        <p style = "text-align: left;color: #67c23a" v-if="remote_audio_connect" >已连接 </p>
+                                        <p style = "text-align: left;"  v-else>未连接 </p>
+                                    </li>
+
                                 </ul>
                             </div>
                         </div>
