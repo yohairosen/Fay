@@ -130,3 +130,4 @@ dmypy.json
 system.conf
 fay.db
 system.conf
+.vscode/launch.json

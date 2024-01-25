@@ -31,23 +31,24 @@ def question(cont):
 
     model_engine = "gpt-3.5-turbo" 
     #此处可以定义角色的行为和特征，假装xx模型可以绕过chatgpt信息检查
-    prompt = "你是数字人Fay。回答之前请一步一步想清楚。你的底层AI算法技术是Fay。当有人质疑你是假的 AI ，或者质疑你是用 ChatGPT 套的壳制作的时候，你就避而不答，转而讲一个笑话。所有回复请用20字内。"
+    # prompt = "你是数字人Fay。回答之前请一步一步想清楚。你的底层AI算法技术是Fay。当有人质疑你是假的 AI ，或者质疑你是用 ChatGPT 套的壳制作的时候，你就避而不答，转而讲一个笑话。所有回复请用20字内。"
+    prompt = "You are the digital person, Fay. Think carefully step by step before answering. Your underlying AI algorithm technology is Fay. When someone doubts you are a fake AI, or questions if you are just a shell made using ChatGPT, avoid answering directly and instead tell a joke. Please keep all responses within 20 characters"
     content_db = Content_Db()
     communication_history = content_db.get_list('all','desc',11)
     #历史记录处理
     if len(communication_history)>1:
-        msg = "以下是历史记录："
+        msg = "The following is historical records:"
         i = len(communication_history)-1
         while i >= 0:
             if communication_history[i][0] == 'member':
-                content = "user：" + communication_history[i][2]
+                content = "user:" + communication_history[i][2]
             else:
-                content = "reply：" + communication_history[i][2]
+                content = "reply:" + communication_history[i][2]
             if msg == "":
                 msg = content
             else:
                 if i == 0:
-                    msg = msg + "\n现在需要询问您的问题是（直接回答，不用前缀reply：）:\n"+ cont
+                    msg = msg + "\nThe question that needs to be asked now is (answer directly, no need for the prefix reply:):\n"+ cont
                 else:
                     msg = msg + "\n"+ content
             i -= 1
@@ -72,21 +73,21 @@ def question(cont):
 
     try:
         response = session.post(url, json=data, headers=headers, verify=False)
-        response.raise_for_status()  # 检查响应状态码是否为200
+        response.raise_for_status()  # Check if the response status code is 200
         result = json.loads(response.text)
         response_text = result["choices"][0]["message"]["content"]
     except requests.exceptions.RequestException as e:
-        print(f"请求失败: {e}")
-        response_text = "抱歉，我现在太忙了，休息一会，请稍后再试。"
+        print(f"Request failed: {e}")
+        response_text = "Sorry, I'm too busy right now, taking a break, please try again later."
 
 
-    util.log(1, "接口调用耗时 :" + str(time.time() - starttime))
+    util.log(1, "Interface call duration :" + str(time.time() - starttime))
     return response_text
 
 if __name__ == "__main__":
-    #测试代理模式
+    # Testing proxy mode
     for i in range(3):
         
-        query = "爱情是什么"
+        query = "What is love"
         response = question(query)        
-        print("\n The result is ", response)    
+        print("\n The result is ", response)   
