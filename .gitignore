@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 system.conf
 fay.db
+system.conf
